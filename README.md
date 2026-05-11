@@ -16,9 +16,9 @@ This project was developed by Computer and Systems Engineering Department (CSED2
 
 * **Anas Alaa Abdo** (ID: `24010004`) - [GitHub Profile](https://github.com/AnasAlaa11)
 * **Adham Hamdy Mohamed Mohamed** (ID: `24010094`) - [GitHub Profile](https://github.com/AdhamHamdy14)
-* **Badr Ashraf Badry Amir** (ID: `24010134`) - [GitHub Profile]()
-* **Omar Ayman Ahmed Abd-Elmoniem** (ID: `24010441`) - [GitHub Profile]()
-* **Amr Ahmed Mahmoud Mohamed** (ID: `24010479`) - [GitHub Profile]()
+* **Badr Ashraf Badry Amir** (ID: `24010134`) - [GitHub Profile](https://github.com/BadrAshraf20)
+* **Omar Ayman Ahmed Abd-Elmoniem** (ID: `24010441`) - [GitHub Profile](https://github.com/OmarAyman879)
+* **Amr Ahmed Mahmoud Mohamed** (ID: `24010479`) - [GitHub Profile](https://github.com/AmrAhmed292)
 
 ---
 

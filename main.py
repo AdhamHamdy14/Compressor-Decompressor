@@ -14,6 +14,12 @@ import lz77, huffman, bit_utils
 # -----------------------------------------------------------------------------
 #                                Main Program
 # -----------------------------------------------------------------------------
+def compress_file(input_path, output_path):
+    pass
+
+def decompress_file(input_path, output_path):
+    pass
+
 def main():
     pass
 
