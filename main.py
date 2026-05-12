@@ -15,11 +15,18 @@ import bit_utils
 import deflate
 
 import sys
+import os
+import time
 
 
-# -----------------------------------------------------------------------------
-#                                Main Program
-# -----------------------------------------------------------------------------
+def format_size(n):
+    for unit in ("B", "KB", "MB", "GB"):
+        if n < 1024:
+            return f"{n:.1f} {unit}"
+        n /= 1024
+    return f"{n:.1f} TB"
+
+
 def compress_file(input_path, output_path):
     # Read the input file as raw bytes.
     with open(input_path, "rb") as input_file:
@@ -47,9 +54,42 @@ def compress_file(input_path, output_path):
                                     distance_lengths, events, literal_codes,
                                     distance_codes)
 
+    # Make size comparison.
+    original_size = os.path.getsize(input_path)
+    compressed_size = os.path.getsize(output_path)
+
+    if original_size > 0:
+        ratio = (1 - compressed_size / original_size) * 100
+    else:
+        ratio = 0
+
+    print("✅ Compression completed successfully!")
+    print(f"  Original size:   {format_size(original_size)}")
+    print(f"  Compressed size: {format_size(compressed_size)}")
+
+    if ratio >= 0:
+        print(f"  Space saved:     {ratio:.1f}%")
+    else:
+        print(f"  Size added:  {abs(ratio):.1f}% " +
+              "(File might be already compressed)")
+
 
 def decompress_file(input_path, output_path):
-    pass
+    raise NotImplementedError("Decompression not yet implemented")
+
+    # Make size comparison.
+    compressed_size = os.path.getsize(input_path)
+    original_size = os.path.getsize(output_path)
+
+    if compressed_size > 0:
+        ratio = ((original_size - compressed_size) / compressed_size) * 100
+    else:
+        ratio = 0
+
+    print("✅ Decompression completed successfully!")
+    print(f"  Compressed size:   {format_size(compressed_size)}")
+    print(f"  Original size: {format_size(original_size)}")
+    print(f"  Space added:     +{ratio:.1f}%")
 
 
 def main():
@@ -65,15 +105,23 @@ def main():
 
     # file compression
     if command == "-c":
+        if input_path.endswith(".sdfl"):
+            print("Warning: input already looks compressed (.sdfl). " +
+                  "Continue? [y/N]")
+            if input("> ").strip().lower() != "y":
+                return
+
         output_path = input_path + ".sdfl"
         print(f"🗃️ Compressing '{input_path}' to '{output_path}' ...")
 
         try:
+            start = time.perf_counter()
             compress_file(input_path, output_path)
-            print("✅ Compression completed successfully!")
+            elapsed = time.perf_counter() - start
+            print(f"  Time taken:      {elapsed:.2f}s")
 
         except FileNotFoundError:
-            print(f"Error: the file '{input_path}' was not found." +
+            print(f"Error: the file '{input_path}' was not found. " +
                   "Please check the name and try again.")
 
         # Handles any another type of errors e.g., Invalid or corrupted file.
@@ -91,11 +139,13 @@ def main():
         print(f"🗃️ Decompressing '{input_path}' to '{output_path}' ...")
 
         try:
+            start = time.perf_counter()
             decompress_file(input_path, output_path)
-            print("✅ Decompression completed successfully!")
+            elapsed = time.perf_counter() - start
+            print(f"  Time taken:      {elapsed:.2f}s")
 
         except FileNotFoundError:
-            print(f"Error: the file '{input_path}' was not found." +
+            print(f"Error: the file '{input_path}' was not found. " +
                   "Please check the name and try again.")
 
         # Handles any another type of errors e.g., Invalid or corrupted file.
