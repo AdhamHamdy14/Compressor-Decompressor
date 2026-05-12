@@ -22,6 +22,7 @@ DISTANCE_TABLE = {
     16385: (28, 13), 24577: (29, 13),
 }
 
+
 class BitReader:
     def __init__(self, file_path):
         # Open file in read-binary mode
@@ -38,7 +39,7 @@ class BitReader:
             # Return None if End of File (EOF) is reached
             if not new_byte:
                 return None
-            
+
             # Add the new byte to the buffer (LSB order)
             self.buffer |= (ord(new_byte) << self.bit_count)
             self.bit_count += 8
@@ -46,25 +47,26 @@ class BitReader:
         # Create a mask to extract 'n' bits
         mask = (1 << n) - 1
         value = self.buffer & mask
-        
+
         # Remove the consumed bits from the buffer
         self.buffer >>= n
         self.bit_count -= n
-        
+
         return value
 
     def close(self):
         # Close the file stream
         self.file.close()
-                
+
+
 class BitWriter:
     def __init__(self, file_path):
         # Open file in write-binary mode
-        self.file = open(file_path, "wb") 
+        self.file = open(file_path, "wb")
         # Buffer to store bits before writing as bytes
-        self.buffer = 0       
+        self.buffer = 0
         # Current number of bits in the buffer
-        self.bit_count = 0    
+        self.bit_count = 0
 
     def write_bits(self, value, n_bits):
         # Shift and add new bits to the buffer (LSB order)
@@ -73,12 +75,12 @@ class BitWriter:
 
         # Extract and write full bytes (8 bits) to the file
         while self.bit_count >= 8:
-            byte_to_write = self.buffer & 0xFF 
-            self.file.write(bytes([byte_to_write])) 
-            
+            byte_to_write = self.buffer & 0xFF
+            self.file.write(bytes([byte_to_write]))
+
             # Remove the written byte from buffer
-            self.buffer >>= 8          
-            self.bit_count -= 8        
+            self.buffer >>= 8
+            self.bit_count -= 8
 
     def close(self):
         # Write any remaining bits as a final byte
@@ -91,6 +93,7 @@ class BitWriter:
 # writer.write_bits(1, 2)  # Write value 1 using 2 bits
 # writer.close()
 
+
 def get_length_symbol_and_extra(length: int) -> tuple:
     l_keys = sorted(LENGTH_TABLE.keys(), reverse=True)
     for k in l_keys:
@@ -99,6 +102,7 @@ def get_length_symbol_and_extra(length: int) -> tuple:
             extra_val = length - k
             return (symbol_l, extra_val, n_extra_l)
     return (0, 0, 0)
+
 
 def get_distance_symbol_and_extra(distance: int) -> tuple:
     d_keys = sorted(DISTANCE_TABLE.keys(), reverse=True)
@@ -109,33 +113,39 @@ def get_distance_symbol_and_extra(distance: int) -> tuple:
             return (symbol_d, extra_val, n_extra_d)
     return (0, 0, 0)
 
+
 def generate_events(tokens: list) -> list:
     events = []
 
     for t in tokens:
         token_type = t[0]
-        
+
         if token_type == "literal":
             value = t[1]
-            # convert literal into ASCCI Value
-            if isinstance(value, str): value = ord(value)
-            events.append(value)      
+            # convert literal into ASCII Value
+            if isinstance(value, str):
+                value = ord(value)
+            events.append(value)
 
         elif token_type == "match":
             length = t[1]
             distance = t[2]
 
             # Process Length
-            symbol_l, extra_val_l, n_extra_l = get_length_symbol_and_extra(length)
+            symbol_l, extra_val_l, n_extra_l = get_length_symbol_and_extra(
+                length
+            )
             events.append(symbol_l)
             if n_extra_l > 0:
                 events.append((extra_val_l, n_extra_l))
 
             # Process Distance
-            symbol_d, extra_val_d, n_extra_d = get_distance_symbol_and_extra(distance)
+            symbol_d, extra_val_d, n_extra_d = get_distance_symbol_and_extra(
+                distance
+            )
             events.append(symbol_d)
             if n_extra_d > 0:
                 events.append((extra_val_d, n_extra_d))
 
-    events.append(256) # End of block symbol
+    events.append(256)  # End of block symbol
     return events

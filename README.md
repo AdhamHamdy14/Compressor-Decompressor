@@ -23,7 +23,11 @@ This project was developed by Computer and Systems Engineering Department (CSED2
 ---
 
 ## 📁 Repository Structure
-* `main.py`: The core python script containing the algorithm.
+* `main.py`:
+* `lz77.py`:
+* `deflate.py`:
+* `huffman.py`:
+* `bit_utils.py`:
 
 ---
 
@@ -34,9 +38,15 @@ Ensure you have Python 3 installed on your machine.
 
 ### 2. Execution
 Clone the repository, navigate to the directory, and run the script:
+To compress:
 ```bash
-python main.py
+python main.py -c file_to_compress"
 ```
+To decompress:
+```bash
+python main.py -d file_to_decompress"
+```
+
 
 ### 3. Usage Instructions
 
