@@ -28,17 +28,23 @@ def format_size(n):
 
 
 def compress_file(input_path, output_path):
+    print("Initializing DEFLATE-inspired pipeline...")
+
     # Read the input file as raw bytes.
     with open(input_path, "rb") as input_file:
         data = input_file.read()
 
     # Stage 1 (LZ77): Find matching byte sequences.
+    print("⚙️ Running LZ77 pattern detection (3-byte hashing)...", flush=True)
     tokens = lz77.lz77_compression(data)
 
     # Stage 2 (Deflate): Convert tokens to standard events.
+    print("⚙️ Converting LZ77 tokens to DEFLATE standard events...",
+          flush=True)
     events = deflate.generate_events(tokens)
 
     # Stage 3 (Huffman): Build Canonical Huffman Codes.
+    print("⚙️ Generating Huffman trees and canonical codes...", flush=True)
     literal_freq, distance_freq = huffman.count_frequencies(events)
 
     # Build Huffman tree to calculate code length.
@@ -50,6 +56,7 @@ def compress_file(input_path, output_path):
     distance_codes = huffman.generate_canonical_codes(distance_lengths)
 
     # Stage 4 (Bit Utils): Pack bits and write to disk.
+    print(f"⚙️ Packing payload into {output_path}...", flush=True)
     bit_utils.write_compressed_file(output_path, literal_lengths,
                                     distance_lengths, events, literal_codes,
                                     distance_codes)
@@ -64,13 +71,15 @@ def compress_file(input_path, output_path):
         ratio = 0
 
     print("✅ Compression completed successfully!")
-    print(f"  Original size:   {format_size(original_size)}")
-    print(f"  Compressed size: {format_size(compressed_size)}")
+    print(f"📄 Original size:    {format_size(original_size)} " +
+          f"({original_size:,} bytes)")
+    print(f"🗜️ Compressed size:  {format_size(compressed_size)} " +
+          f"({compressed_size:,} bytes)")
 
     if ratio >= 0:
-        print(f"  Space saved:     {ratio:.1f}%")
+        print(f"📉 Space saved:     {ratio:.1f}%")
     else:
-        print(f"  Size added:  {abs(ratio):.1f}% " +
+        print(f"📉 Size added:  {abs(ratio):.1f}% " +
               "(File might be already compressed)")
 
 
@@ -87,9 +96,11 @@ def decompress_file(input_path, output_path):
         ratio = 0
 
     print("✅ Decompression completed successfully!")
-    print(f"  Compressed size:   {format_size(compressed_size)}")
-    print(f"  Original size: {format_size(original_size)}")
-    print(f"  Space added:     +{ratio:.1f}%")
+    print(f"🗜️ Compressed size:   {format_size(compressed_size)} " +
+          f"({compressed_size:,} bytes)")
+    print(f"📄 Original size: {format_size(original_size)} " +
+          f"({original_size:,} bytes)")
+    print(f"📉 Space added:     +{ratio:.1f}%")
 
 
 def main():
@@ -118,7 +129,7 @@ def main():
             start = time.perf_counter()
             compress_file(input_path, output_path)
             elapsed = time.perf_counter() - start
-            print(f"  Time taken:      {elapsed:.2f}s")
+            print(f"⏱️ Time taken:      {elapsed:.2f} seconds")
 
         except FileNotFoundError:
             print(f"Error: the file '{input_path}' was not found. " +
@@ -142,7 +153,7 @@ def main():
             start = time.perf_counter()
             decompress_file(input_path, output_path)
             elapsed = time.perf_counter() - start
-            print(f"  Time taken:      {elapsed:.2f}s")
+            print(f"⏱️ Time taken:      {elapsed:.2f} seconds")
 
         except FileNotFoundError:
             print(f"Error: the file '{input_path}' was not found. " +
