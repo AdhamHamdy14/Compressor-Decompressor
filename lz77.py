@@ -4,7 +4,7 @@ WINDOW_SIZE = 32768
 MAX_CANDIDATES = 64
 
 
-def lz77_compression(data: bytes):
+def lz77_compression(data: bytes) -> list:
     """
     Compresses data using the LZ77 algorithm.
 
