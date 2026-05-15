@@ -57,8 +57,8 @@ class Node:
 
 def count_frequencies(events: list) -> tuple:
     # Initialize frequency arrays
-    lit_freq = [0] * 286
-    dist_freq = [0] * 30
+    lit_freq={}
+    dist_freq={}
     
     # [MODIFICATION]: Replaced while loop with a clean for loop
     for event in events:
@@ -67,18 +67,18 @@ def count_frequencies(events: list) -> tuple:
         if event_type == "Literal":
             # event format: ("Literal", symbol)
             symbol = event[1]
-            lit_freq[symbol] += 1
+            lit_freq[symbol]=lit_freq.get(symbol, 0)+1
             
         elif event_type == "Match":
             # event format: ("Match", len_sym, len_extra_str, dist_sym, dist_extra_str)
             len_sym = event[1]
             dist_sym = event[3]
-            lit_freq[len_sym] += 1
-            dist_freq[dist_sym] += 1
+            lit_freq[len_sym]=lit_freq.get(len_sym, 0)+1
+            dist_freq[dist_sym] = dist_freq.get(dist_sym, 0)+1
             
         elif event_type == "End":
             # event format: ("End", 256)
-            lit_freq[256] += 1
+            lit_freq[256]=lit_freq.get(256, 0)+1
             
     return lit_freq, dist_freq
 
