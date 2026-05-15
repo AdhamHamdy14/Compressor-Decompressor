@@ -57,6 +57,10 @@ class Node:
 
 def count_frequencies(events: list) -> tuple:
     # Initialize frequency arrays
+    # NOTE: While a fixed-size list (array) of 286/30 elements could be used 
+    # to strictly follow the PDF, a dictionary is used here to optimize memory. 
+    # This prevents allocating 286 slots for sparse data (e.g., if only 'a' exists), 
+    # ensuring only symbols present in the input occupy space.
     lit_freq={}
     dist_freq={}
     
