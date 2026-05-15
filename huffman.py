@@ -255,3 +255,13 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
             next_code[length] += 1
 
     return canonical_codes
+
+def get_fixed_lengths_array(sorted_lengths: list, max_size: int) -> list:
+    """
+    Converts a list of (symbol, bit_length) tuples into a fixed-size list.
+    """
+    lengths_array = [0] * max_size
+    for symbol, length in sorted_lengths:
+        if symbol < max_size:
+            lengths_array[symbol] = length
+    return lengths_array
