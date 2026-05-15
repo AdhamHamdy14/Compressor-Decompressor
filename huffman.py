@@ -56,60 +56,30 @@ class Node:
 
 
 def count_frequencies(events: list) -> tuple:
-    """
-    Calculate the frequency of literal/length and distance symbols.
-
-    This function parses a list of DEFLATE events, separating the counts
-    for literals/lengths (0-285) and distances (0-29) while skipping
-    any associated extra bits (represented as tuples).
-
-    Args:
-        events (list): A list of DEFLATE events (integers for symbols,
-                       tuples for extra bits).
-
-    Returns:
-        tuple: A tuple containing two dictionaries (lit_freq, dist_freq)
-               representing the frequency of each symbol.
-    """
-
-    # 1. Initialize dictionaries to store the frequencies.
-    lit_freq = {}
-    dist_freq = {}
-
-    # 2. Use a pointer to iterate through the list to maintain context.
-    i = 0
-    while i < len(events):
-        event = events[i]
-
-        # Case 1: Literal or End of Block symbol.
-        if isinstance(event, int) and event <= 256:
-            # Add the element to the dictionary or increment its count by 1.
-            lit_freq[event] = lit_freq.get(event, 0) + 1
-            i += 1
-
-        # Case 2: Length symbol (257-285).
-        elif isinstance(event, int) and 257 <= event <= 285:
-
-            # a) Record the frequency of the length symbol.
-            lit_freq[event] = lit_freq.get(event, 0) + 1
-            i += 1
-
-            # b) Skip the extra bits for the length (if they exist as a Tuple).
-            if i < len(events) and isinstance(events[i], tuple):
-                i += 1
-
-            # c) Following a length symbol, the next integer must be
-            # a distance symbol.
-            dist_symbol = events[i]
-            dist_freq[dist_symbol] = dist_freq.get(dist_symbol, 0) + 1
-            i += 1
-
-            # d) Skip the extra bits for the distance
-            # (if they exist as a Tuple).
-            if i < len(events) and isinstance(events[i], tuple):
-                i += 1
-
-    # Return the two dictionaries to be used in building the Huffman trees.
+    # Initialize frequency arrays
+    lit_freq = [0] * 286
+    dist_freq = [0] * 30
+    
+    # [MODIFICATION]: Replaced while loop with a clean for loop
+    for event in events:
+        event_type = event[0]
+        
+        if event_type == "Literal":
+            # event format: ("Literal", symbol)
+            symbol = event[1]
+            lit_freq[symbol] += 1
+            
+        elif event_type == "Match":
+            # event format: ("Match", len_sym, len_extra_str, dist_sym, dist_extra_str)
+            len_sym = event[1]
+            dist_sym = event[3]
+            lit_freq[len_sym] += 1
+            dist_freq[dist_sym] += 1
+            
+        elif event_type == "End":
+            # event format: ("End", 256)
+            lit_freq[256] += 1
+            
     return lit_freq, dist_freq
 
 
@@ -229,15 +199,15 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
     Generate Canonical Huffman codes from sorted bit lengths.
 
     Calculates the exact prefix-free binary code for each symbol based on
-    the DEFLATE canonical rules. The returned codes include their exact bit
-    length to ensure correct bitwise writing, preserving any leading zeros.
+    the DEFLATE canonical rules. The returned codes are formatted as 
+    padded binary strings to ensure correct bitwise writing with leading zeros.
 
     Args:
         sorted_lengths (list): A sorted list of (symbol, bit_length) tuples.
 
     Returns:
-        dict: A dictionary mapping each symbol to a tuple
-              (code_value, bit_length).
+        dict: A dictionary mapping each symbol to its binary string representation
+              (e.g., "010").
     """
 
     # 1. Guard against empty input to prevent errors.
@@ -272,13 +242,13 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
     for symbol, length in sorted_lengths:
         # Skip symbols that do not appear in the data (length 0).
         if length != 0:
-            # Retrieve the current available code for this specific bit length.
+            # Retrieve the current available integer code for this specific bit length.
             code_value = next_code[length]
 
-            # Store the code value along with its exact bit length
-            # (Storing the length is crucial for the BitWriter to know exactly
-            # how many bits to write, preserving any leading zeros).
-            canonical_codes[symbol] = (code_value, length)
+            # [MODIFICATION]: Convert the integer to a padded binary string.
+            # Storing it directly as a string (e.g., "010") fixes the BitWriter compatibility.
+            binary_string = format(code_value, f"0{length}b")
+            canonical_codes[symbol] = binary_string
 
             # Increment the code value for the next symbol that
             # shares this bit length.
