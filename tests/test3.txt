@@ -59,11 +59,10 @@ def count_frequencies(events: list) -> tuple:
     # Initialize frequency arrays
     # NOTE: While a fixed-size list (array) of 286/30 elements could be used
     # to strictly follow the PDF, a dictionary is used here to optimize memory.
-    # This prevents allocating 286 slots for sparse data
-    # (e.g., if only 'a' exists), ensuring only symbols present in the input
-    # occupy space.
-    lit_freq = {}
-    dist_freq = {}
+    # This prevents allocating 286 slots for sparse data (e.g., if only 'a' exists),
+    # ensuring only symbols present in the input occupy space.
+    lit_freq={}
+    dist_freq={}
 
     # [MODIFICATION]: Replaced while loop with a clean for loop
     for event in events:
@@ -72,19 +71,18 @@ def count_frequencies(events: list) -> tuple:
         if event_type == "Literal":
             # event format: ("Literal", symbol)
             symbol = event[1]
-            lit_freq[symbol] = lit_freq.get(symbol, 0) + 1
+            lit_freq[symbol]=lit_freq.get(symbol, 0)+1
 
         elif event_type == "Match":
-            # event format: (
-            #      "Match", len_sym, len_extra_str, dist_sym, dist_extra_str)
+            # event format: ("Match", len_sym, len_extra_str, dist_sym, dist_extra_str)
             len_sym = event[1]
             dist_sym = event[3]
-            lit_freq[len_sym] = lit_freq.get(len_sym, 0) + 1
-            dist_freq[dist_sym] = dist_freq.get(dist_sym, 0) + 1
+            lit_freq[len_sym]=lit_freq.get(len_sym, 0)+1
+            dist_freq[dist_sym] = dist_freq.get(dist_sym, 0)+1
 
         elif event_type == "End":
             # event format: ("End", 256)
-            lit_freq[256] = lit_freq.get(256, 0) + 1
+            lit_freq[256]=lit_freq.get(256, 0)+1
 
     return lit_freq, dist_freq
 
@@ -212,8 +210,8 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
         sorted_lengths (list): A sorted list of (symbol, bit_length) tuples.
 
     Returns:
-        dict: A dictionary mapping each symbol to its binary string
-              representation (e.g., "010").
+        dict: A dictionary mapping each symbol to its binary string representation
+              (e.g., "010").
     """
 
     # 1. Guard against empty input to prevent errors.
@@ -248,13 +246,11 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
     for symbol, length in sorted_lengths:
         # Skip symbols that do not appear in the data (length 0).
         if length != 0:
-            # Retrieve the current available integer code for this specific
-            # bit length.
+            # Retrieve the current available integer code for this specific bit length.
             code_value = next_code[length]
 
             # [MODIFICATION]: Convert the integer to a padded binary string.
-            # Storing it directly as a string (e.g., "010") fixes the
-            # BitWriter compatibility.
+            # Storing it directly as a string (e.g., "010") fixes the BitWriter compatibility.
             binary_string = format(code_value, f"0{length}b")
             canonical_codes[symbol] = binary_string
 
@@ -263,7 +259,6 @@ def generate_canonical_codes(sorted_lengths: list) -> dict:
             next_code[length] += 1
 
     return canonical_codes
-
 
 def get_fixed_lengths_array(sorted_lengths: list, max_size: int) -> list:
     """

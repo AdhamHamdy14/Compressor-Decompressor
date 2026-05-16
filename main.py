@@ -93,13 +93,16 @@ def compress_file(input_path, output_path):
     # Convert tuples to fixed-size lists (286 and 30) for the bit writer.
     # Note: Make sure get_fixed_lengths_array is added in huffman.py
     full_lit_lengths = huffman.get_fixed_lengths_array(sorted_lit_lengths, 286)
-    full_dist_lengths = huffman.get_fixed_lengths_array(sorted_dist_lengths, 30)
+    full_dist_lengths = huffman.get_fixed_lengths_array(
+                        sorted_dist_lengths, 30
+                        )
 
     # Stage 4 (Bit Utils): Pack bits and write to disk.
     print(f"⚙️ Packing payload into {output_path}...", flush=True)
     bit_utils.write_compressed_file(output_path, full_lit_lengths,
                                     full_dist_lengths, events, literal_codes,
-                                    distance_codes)
+                                    distance_codes
+                                    )
 
     # Make size comparison.
     original_size = os.path.getsize(input_path)
@@ -167,7 +170,6 @@ def decompress_file(input_path, output_path):
     # Writing the original file to the hard disk
     with open(output_path, "wb") as original_file:
         original_file.write(original_data)
-
 
     # Make size comparison.
     compressed_size = os.path.getsize(input_path)

@@ -1,0 +1,9 @@
+Computer and Systems Engineering Department at Alexandria University.
+Computer and Systems Engineering Department at Alexandria University.
+DEFLATE compression algorithm is very powerful and efficient.
+DEFLATE compression algorithm is very powerful and efficient.
+Testing the BitWriter and BitReader processes. Testing the BitWriter and BitReader processes.
+Data compression is fun. Data compression is great. Data compression is fun. Data compression is great.
+AAAAABBBBBCCCCCDDDDDEEEEEAAAAABBBBBCCCCCDDDDDEEEEE.
+0123456789 0123456789 0123456789 0123456789.
+End of the compression test file. End of the compression test file. End of the compression test file.

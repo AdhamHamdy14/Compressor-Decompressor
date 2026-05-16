@@ -68,8 +68,12 @@ def generate_events(tokens: list) -> list:
             symbol_d, extra_val_d, n_extra_d = get_distance_symbol_and_extra(
                 distance
             )
-            str_ex_l = format(extra_val_l, f'0{n_extra_l}b') if n_extra_l > 0 else ""
-            str_ex_d = format(extra_val_d, f'0{n_extra_d}b') if n_extra_d > 0 else ""
+            str_ex_l = (
+                format(extra_val_l, f'0{n_extra_l}b') if n_extra_l > 0 else ""
+            )
+            str_ex_d = (
+                format(extra_val_d, f'0{n_extra_d}b') if n_extra_d > 0 else ""
+            )
             events.append(("Match", symbol_l, str_ex_l, symbol_d, str_ex_d))
 
     events.append(("End", 256))  # End of block symbol
