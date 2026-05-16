@@ -23,77 +23,6 @@ DISTANCE_TABLE = {
 }
 
 
-class BitReader:
-    def __init__(self, file_path):
-        # Open file in read-binary mode
-        self.file = open(file_path, "rb")
-        # Buffer to store bits read from the file
-        self.buffer = 0
-        # Number of available bits in the buffer
-        self.bit_count = 0
-
-    def read_bits(self, n):
-        # Read more bytes if the buffer has fewer than 'n' bits
-        while self.bit_count < n:
-            new_byte = self.file.read(1)
-            # Return None if End of File (EOF) is reached
-            if not new_byte:
-                return None
-
-            # Add the new byte to the buffer (LSB order)
-            self.buffer |= (ord(new_byte) << self.bit_count)
-            self.bit_count += 8
-
-        # Create a mask to extract 'n' bits
-        mask = (1 << n) - 1
-        value = self.buffer & mask
-
-        # Remove the consumed bits from the buffer
-        self.buffer >>= n
-        self.bit_count -= n
-
-        return value
-
-    def close(self):
-        # Close the file stream
-        self.file.close()
-
-
-class BitWriter:
-    def __init__(self, file_path):
-        # Open file in write-binary mode
-        self.file = open(file_path, "wb")
-        # Buffer to store bits before writing as bytes
-        self.buffer = 0
-        # Current number of bits in the buffer
-        self.bit_count = 0
-
-    def write_bits(self, value, n_bits):
-        # Shift and add new bits to the buffer (LSB order)
-        self.buffer |= (value << self.bit_count)
-        self.bit_count += n_bits
-
-        # Extract and write full bytes (8 bits) to the file
-        while self.bit_count >= 8:
-            byte_to_write = self.buffer & 0xFF
-            self.file.write(bytes([byte_to_write]))
-
-            # Remove the written byte from buffer
-            self.buffer >>= 8
-            self.bit_count -= 8
-
-    def close(self):
-        # Write any remaining bits as a final byte
-        if self.bit_count > 0:
-            self.file.write(bytes([self.buffer & 0xFF]))
-        self.file.close()
-
-# Usage Example:
-# writer = BitWriter("compressed.bin")
-# writer.write_bits(1, 2)  # Write value 1 using 2 bits
-# writer.close()
-
-
 def get_length_symbol_and_extra(length: int) -> tuple:
     l_keys = sorted(LENGTH_TABLE.keys(), reverse=True)
     for k in l_keys:
@@ -120,14 +49,14 @@ def generate_events(tokens: list) -> list:
     for t in tokens:
         token_type = t[0]
 
-        if token_type == "literal":
+        if token_type == "Literal":
             value = t[1]
             # convert literal into ASCII Value
             if isinstance(value, str):
                 value = ord(value)
-            events.append(value)
+            events.append(("Literal", value))
 
-        elif token_type == "match":
+        elif token_type == "Match":
             length = t[1]
             distance = t[2]
 
@@ -135,17 +64,13 @@ def generate_events(tokens: list) -> list:
             symbol_l, extra_val_l, n_extra_l = get_length_symbol_and_extra(
                 length
             )
-            events.append(symbol_l)
-            if n_extra_l > 0:
-                events.append((extra_val_l, n_extra_l))
-
             # Process Distance
             symbol_d, extra_val_d, n_extra_d = get_distance_symbol_and_extra(
                 distance
             )
-            events.append(symbol_d)
-            if n_extra_d > 0:
-                events.append((extra_val_d, n_extra_d))
+            str_ex_l = format(extra_val_l, f'0{n_extra_l}b') if n_extra_l > 0 else ""
+            str_ex_d = format(extra_val_d, f'0{n_extra_d}b') if n_extra_d > 0 else ""
+            events.append(("Match", symbol_l, str_ex_l, symbol_d, str_ex_d))
 
-    events.append(256)  # End of block symbol
+    events.append(("End", 256))  # End of block symbol
     return events
