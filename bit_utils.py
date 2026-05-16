@@ -6,7 +6,8 @@ and the two public functions:
 
     write_compressed_file(output_path, lit_lengths, dist_lengths,
                           events, lit_codes, dist_codes)
-    read_compressed_file(input_path) -> (lit_lengths, dist_lengths, payload_bits)
+    read_compressed_file(input_path) ->
+                                (lit_lengths, dist_lengths, payload_bits)
 """
 
 
@@ -28,7 +29,7 @@ class BitWriter:
     """
 
     def __init__(self) -> None:
-        self._bits: list[str] = []   # each element is a single '0' or '1'
+        self._bits: list[str] = []
 
     # ------------------------------------------------------------------
     def write_int(self, val: int, num_bits: int) -> None:
@@ -173,15 +174,19 @@ def write_compressed_file(
     dist_codes   : dict mapping distance symbol       → canonical bit string
     """
     if len(lit_lengths) != 286:
-        raise ValueError(f"lit_lengths must have 286 entries, got {len(lit_lengths)}")
+        raise ValueError(
+            f"lit_lengths must have 286 entries, got {len(lit_lengths)}"
+        )
     if len(dist_lengths) != 30:
-        raise ValueError(f"dist_lengths must have 30 entries, got {len(dist_lengths)}")
+        raise ValueError(
+            f"dist_lengths must have 30 entries, got {len(dist_lengths)}"
+        )
 
     # ── Compute bit-widths via int.bit_length() ──────────────────────────────
-    # int.bit_length() returns the number of bits needed to represent the value,
-    # which equals floor(log2(M)) + 1 for M > 0, and 0 for M == 0 — exactly
+    # int.bit_length() returns the number of bits needed to represent the value
+    # ,which equals floor(log2(M)) + 1 for M > 0, and 0 for M == 0 — exactly
     # what the spec requires.
-    lit_bw  = max(lit_lengths).bit_length()
+    lit_bw = max(lit_lengths).bit_length()
     dist_bw = max(dist_lengths).bit_length()
 
     writer = BitWriter()
@@ -206,19 +211,24 @@ def write_compressed_file(
 
         elif kind == "Match":
             _, len_sym, len_extra, dist_sym, dist_extra = event
-            writer.write_raw_bits(lit_codes[len_sym])   # Huffman(length_symbol)
-            writer.write_raw_bits(len_extra)             # raw length extra bits
-            writer.write_raw_bits(dist_codes[dist_sym]) # Huffman(distance_symbol)
-            writer.write_raw_bits(dist_extra)            # raw distance extra bits
+            # Huffman(length_symbol)
+            writer.write_raw_bits(lit_codes[len_sym])
+            # raw length extra bits
+            writer.write_raw_bits(len_extra)
+            # Huffman(distance_symbol)
+            writer.write_raw_bits(dist_codes[dist_sym])
+            # raw distance extra bits
+            writer.write_raw_bits(dist_extra)
 
         elif kind == "End":
-            _, symbol = event                            # symbol is always 256
+            # symbol is always 256
+            _, symbol = event
             writer.write_raw_bits(lit_codes[symbol])
 
         else:
             raise ValueError(f"Unknown event kind: {kind!r}")
 
-    # ── Write to disk ─────────────────────────────────────────────────────────
+    # ── Write to disk ────────────────────────────────────────────────────────
     with open(output_path, "wb") as fh:
         fh.write(writer.to_bytearray())
 
@@ -242,7 +252,7 @@ def read_compressed_file(input_path: str) -> tuple[list[int], list[int], str]:
     reader = BitReader(data)
 
     # ── Header ───────────────────────────────────────────────────────────────
-    lit_bw  = reader.read_int(4)
+    lit_bw = reader.read_int(4)
     dist_bw = reader.read_int(4)
 
     lit_lengths: list[int] = [
@@ -252,5 +262,5 @@ def read_compressed_file(input_path: str) -> tuple[list[int], list[int], str]:
         reader.read_int(dist_bw) for _ in range(30)
     ]
 
-    # ── Payload ───────────────────────────────────────────────────────────────
+    # ── Payload ──────────────────────────────────────────────────────────────
     return lit_lengths, dist_lengths, reader.get_remaining_bits()
