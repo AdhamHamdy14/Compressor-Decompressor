@@ -28,7 +28,7 @@ class BitWriter:
     """
 
     def __init__(self) -> None:
-        self._bits: list[str] = []   # each element is a single '0' or '1'
+        self._bits: list[str] = []
 
     # ------------------------------------------------------------------
     def write_int(self, val: int, num_bits: int) -> None:

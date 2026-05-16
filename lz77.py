@@ -29,7 +29,7 @@ def lz77_compression(data: bytes) -> list:
         if i + MIN_MATCH > size:
 
             for j in range(i, size):
-                tokens.append(("literal", data[j]))
+                tokens.append(("Literal", data[j]))
 
             break
 
@@ -57,7 +57,7 @@ def lz77_compression(data: bytes) -> list:
                 best_dis = distance
 
         if best_len >= MIN_MATCH:
-            tokens.append(("match", best_len, best_dis))
+            tokens.append(("Match", best_len, best_dis))
 
             for j in range(i, i + best_len):
 
@@ -67,7 +67,7 @@ def lz77_compression(data: bytes) -> list:
             i += best_len
 
         else:
-            tokens.append(("literal", data[i]))
+            tokens.append(("Literal", data[i]))
             table.setdefault(x, []).append(i)
             i += 1
 
