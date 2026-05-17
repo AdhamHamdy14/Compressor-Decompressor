@@ -274,3 +274,38 @@ def get_fixed_lengths_array(sorted_lengths: list, max_size: int) -> list:
         if symbol < max_size:
             lengths_array[symbol] = length
     return lengths_array
+
+
+def generate_codes_from_array(lengths_array: list) -> dict:
+    """
+    Reconstructs Canonical Huffman codes directly from a fixed-size lengths array.
+    
+    This function acts as an adapter for the decompression phase. It takes the 
+    flat list of bit lengths read from the file header, filters out unused symbols,
+    applies the strict canonical sorting rules, and delegates the actual code 
+    generation to the core Huffman engine.
+
+    Args:
+        lengths_array (list): A flat list where the index represents the symbol 
+                              and the value represents its bit length.
+
+    Returns:
+        dict: A mapping of symbols to their exact binary string representation.
+    """
+    
+    # 1. Filter out unused symbols (length 0) and map to (symbol, length) tuples.
+    # The 'enumerate' function elegantly uses the list index as the symbol value.
+    active_lengths = [
+        (sym, length) for sym, length in enumerate(lengths_array) if length > 0
+    ]
+    
+    # 2. Sort the active symbols according to the Canonical Huffman rules:
+    #    - Primary sort: Bit length (ascending) -> x[1]
+    #    - Secondary sort: Symbol value (ascending) -> x[0]
+    # This precise ordering ensures the decompressor assigns the exact same codes
+    # as the compressor.
+    sorted_lengths = sorted(active_lengths, key=lambda x: (x[1], x[0]))
+    
+    # 3. Delegate to the core generation function using the perfectly formatted data.
+    # This returns the dictionary mapping symbols to their binary string codes.
+    return generate_canonical_codes(sorted_lengths)
