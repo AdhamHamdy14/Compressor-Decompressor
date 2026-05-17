@@ -102,10 +102,12 @@ def generate_events(tokens: list) -> list:
     binary strings, and adds the End-of-Block symbol at the end.
 
     Args:
-        tokens (list): A list of LZ77 tokens, e.g., [("Literal", "a"), ("Match", 4, 1)].
+        tokens (list): A list of LZ77 tokens, e.g., [("Literal", "a"),
+        ("Match", 4, 1)].
 
     Returns:
-        list: A list of formatted events ready for the Huffman and Writer stages.
+        list: A list of formatted events ready for the Huffman and
+        Writer stages.
     """
     events = []
 
@@ -131,8 +133,10 @@ def generate_events(tokens: list) -> list:
             symbol_d, extra_val_d, n_extra_d = get_distance_symbol_and_extra(
                 distance
             )
-            str_ex_l = format(extra_val_l, f'0{n_extra_l}b') if n_extra_l > 0 else ""
-            str_ex_d = format(extra_val_d, f'0{n_extra_d}b') if n_extra_d > 0 else ""
+            str_ex_l = format(
+                extra_val_l, f'0{n_extra_l}b') if n_extra_l > 0 else ""
+            str_ex_d = format(
+                extra_val_d, f'0{n_extra_d}b') if n_extra_d > 0 else ""
             events.append(("Match", symbol_l, str_ex_l, symbol_d, str_ex_d))
 
     events.append(("End", 256))  # End of block symbol
@@ -189,7 +193,8 @@ def decode_events(events: list) -> list:
 
     Args:
         events (list): Decoded events from the bitstream.
-                       Format: [("Literal", 97), ("Match", 257, "01", 3, "0"), ("End", 256)]
+                       Format: [("Literal", 97), ("Match", 257, "01", 3, "0"),
+                       ("End", 256)]
 
     Returns:
         list: Reconstructed LZ77 tokens.
@@ -201,12 +206,14 @@ def decode_events(events: list) -> list:
         kind = event[0]
 
         if kind == "Literal":
-            char_val = chr(event[1])
-            tokens.append(("Literal", char_val))
+            tokens.append(("Literal", event[1]))
 
         elif kind == "Match":
             # Unpack len_sym, len_extra, dist_sym, dist_extra from event
-            len_sym, len_extra_str, dist_sym, dist_extra_str = event[1], event[2], event[3], event[4]
+            len_sym = event[1]
+            len_extra_str = event[2]
+            dist_sym = event[3]
+            dist_extra_str = event[4]
 
             # Use inverse tables to get base_length and base_distance
             len = get_actual_length(len_sym, len_extra_str)
@@ -222,17 +229,22 @@ def decode_events(events: list) -> list:
     return tokens
 
 
-def decode_bitstream(payload_bits: str, lit_codes: dict, dist_codes: dict) -> list:
+def decode_bitstream(
+    payload_bits: str,
+    lit_codes: dict,
+    dist_codes: dict
+) -> list:
     """
     Reads the raw payload bits and converts them back into Deflate events
     using the reconstructed Huffman canonical codes.
     """
-    
+
     inv_lit = {v: k for k, v in lit_codes.items()}
     inv_dist = {v: k for k, v in dist_codes.items()}
 
     len_extra_bits = {sym: extra for _, (sym, extra) in LENGTH_TABLE.items()}
-    dist_extra_bits = {sym: extra for _, (sym, extra) in DISTANCE_TABLE.items()}
+    dist_extra_bits = {
+                      sym: extra for _, (sym, extra) in DISTANCE_TABLE.items()}
 
     events = []
     i = 0
@@ -247,26 +259,25 @@ def decode_bitstream(payload_bits: str, lit_codes: dict, dist_codes: dict) -> li
             if current_bits in inv_lit:
                 sym = inv_lit[current_bits]
                 break
-        
+
         if sym is None:
             break
 
         if sym < 256:
             events.append(("Literal", sym))
-        
+
         elif sym == 256:
             events.append(("End", 256))
             break
-        
+
         else:
-            
+
             len_sym = sym
             n_extra_l = len_extra_bits[len_sym]
-            
+
             len_extra_str = payload_bits[i:i+n_extra_l]
             i += n_extra_l
 
-            
             current_bits = ""
             dist_sym = None
             while i < n:
@@ -275,16 +286,17 @@ def decode_bitstream(payload_bits: str, lit_codes: dict, dist_codes: dict) -> li
                 if current_bits in inv_dist:
                     dist_sym = inv_dist[current_bits]
                     break
-            
+
             if dist_sym is None:
-                raise ValueError("Corrupted compressed file: missing distance bits.")
+                raise ValueError(
+                    "Corrupted compressed file: missing distance bits.")
 
             n_extra_d = dist_extra_bits[dist_sym]
-            
-            
+
             dist_extra_str = payload_bits[i:i+n_extra_d]
             i += n_extra_d
 
-            events.append(("Match", len_sym, len_extra_str, dist_sym, dist_extra_str))
+            events.append((
+                "Match", len_sym, len_extra_str, dist_sym, dist_extra_str))
 
     return events

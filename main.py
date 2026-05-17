@@ -1,13 +1,3 @@
-"""
-A Simplified DEFLATE Compressor and Decompressor
-
-Student_1: Adham Hamdy Mohamed Mohamed    ID: 24010094
-Student_2: Anas Alaa Abdo                 ID: 24010004
-Student_3: Badr Ashraf Badry Amir         ID: 24010134
-Student_4: Omar Ayman Ahmed Abd-Elmoniem  ID: 24010441
-Student_5: Amr Ahmed Mahmoud Mohamed      ID: 24010479
-CSED28++
-"""
 # Files import
 import lz77
 import huffman
@@ -31,7 +21,7 @@ CYAN = "\033[36m"
 WHITE = "\033[37m"
 
 
-def format_size(n: int) -> int:
+def format_size(n: int) -> str:
     """
     Helper function to format the size of the file into
         a human-readable string.
@@ -190,32 +180,40 @@ def decompress_file(input_path, output_path):
     print(f"{WHITE}⚙️  Initializing DEFLATE-inspired reverse pipeline..." +
           f"{RESET}")
 
-    # Stage 1 (Bit_utils): Read the compressed file and its header.
-    print(f"{MAGENTA}├── 🔑 {RESET}Reading file header and " +
-          "extracting bitstream...", flush=True)
-    literal_lengths, distance_lengths, payload_bits = (
-        bit_utils.read_compressed_file(input_path)
-    )
+    try:
+        # Stage 1 (Bit_utils): Read the compressed file and its header.
+        print(f"{MAGENTA}├── 🔑 {RESET}Reading file header and " +
+            "extracting bitstream...", flush=True)
+        literal_lengths, distance_lengths, payload_bits = (
+            bit_utils.read_compressed_file(input_path)
+        )
 
-    # Stage 2 (Huffman): Construct codes.
-    print(f"{MAGENTA}├── 🌿 {RESET}Reconstructing Canonical Huffman " +
-          "dictionaries...", flush=True)
-    literal_codes = huffman.generate_canonical_codes(literal_lengths)
-    distance_codes = huffman.generate_canonical_codes(distance_lengths)
+        # Stage 2 (Huffman): Construct codes.
+        print(f"{MAGENTA}├── 🌿 {RESET}Reconstructing Canonical Huffman " +
+            "dictionaries...", flush=True)
+        literal_codes = huffman.generate_codes_from_array(literal_lengths)
+        distance_codes = huffman.generate_codes_from_array(distance_lengths)
 
-    # Stage 3 (Deflate): Bit decoding of Tokens.
-    print(f"{MAGENTA}├── 🔄 {RESET}Decoding bitstream back into " +
-          "standard events...", flush=True)
-    tokens = deflate.decode_events(payload_bits, literal_codes, distance_codes)
+        # Stage 3 (Deflate): Bit decoding of Tokens.
+        print(f"{MAGENTA}├── 🔄 {RESET}Decoding bitstream back into " +
+            "standard events...", flush=True)
+        events = deflate.decode_bitstream(
+            payload_bits, literal_codes, distance_codes
+            )
+        tokens = deflate.decode_events(events)
 
-    # Stage 4 (LZ77): Decompress the LZ77.
-    print(f"{MAGENTA}└── 🔍 {RESET}Reconstructing original raw bytes via " +
-          "LZ77 decompression...", flush=True)
-    original_data = lz77.lz77_decompression(tokens)
+        # Stage 4 (LZ77): Decompress the LZ77.
+        print(f"{MAGENTA}└── 💾 {RESET}Reconstructing original raw bytes via " +
+            "LZ77 decompression...", flush=True)
+        original_data = lz77.lz77_decompression(tokens)
 
-    # Writing the original file to the hard disk
-    with open(output_path, "wb") as original_file:
-        original_file.write(original_data)
+        # Writing the original file to the hard disk
+        with open(output_path, "wb") as original_file:
+            original_file.write(original_data)
+
+    except Exception as e:
+        print(f"{RED}{BOLD}❌  An unexpected error occurred: {e}{RESET}")
+        return
 
     elapsed = time.perf_counter() - start
 
@@ -260,45 +258,136 @@ def main():
     # file compression
     if command == "-c":
         if input_path.endswith(".sdfl"):
-            print("Warning: input already looks compressed (.sdfl). " +
-                  "Continue? [y/N]")
-            if input("> ").strip().lower() != "y":
-                return
+            print(f"{RED}⚠️  Warning: input already looks compressed " +
+                  f"(.sdfl).{RESET}")
+            return
 
         output_path = input_path + ".sdfl"
+
+        if os.path.exists(output_path):
+            print(f"\n{YELLOW}⚠️  Warning: The file '{output_path}' " +
+                  f"already exists.{RESET}")
+            print(f"{WHITE}Please choose an action:{RESET}")
+            print(f"  {CYAN}[1]{RESET} Abort compression (Stop)")
+            print(f"  {CYAN}[2]{RESET} Overwrite the existing file")
+            print(f"  {CYAN}[3]{RESET} Create a new copy automatically")
+
+            choice = input(f"{YELLOW}> {RESET}").strip()
+
+            if choice == '2':
+                print(f"{RED}⚠️  Overwriting existing file...{RESET}")
+                time.sleep(0.5)
+
+            elif choice == '3':
+                # Auto-rename logic: e.g., test.pdf -> test_copy(1).pdf
+                base_name, ext = os.path.splitext(output_path)
+                counter = 1
+                new_output_path = f"{base_name}_copy({counter}){ext}"
+
+                # Keep incrementing the counter until we find a free name
+                while os.path.exists(new_output_path):
+                    counter += 1
+                    new_output_path = f"{base_name}_copy({counter}){ext}"
+
+                output_path = new_output_path
+                print(f"{GREEN}✅ Redirecting output to: " +
+                      f"'{output_path}'{RESET}")
+
+            else:
+                # If user types 1 or anything else, abort for safety
+                print(f"{RED}❌ Compression aborted by user.{RESET}\n")
+                return
 
         try:
             compress_file(input_path, output_path)
 
         except FileNotFoundError:
-            print(f"Error: the file '{input_path}' was not found. " +
-                  "Please check the name and try again.")
+            print(f"{RED}{BOLD}❌  Error: the file '{input_path}' was not " +
+                  f"found. Please check the name and try again.{RESET}")
+            return
 
         # Handles any another type of errors e.g., Invalid or corrupted file.
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            print(f"{RED}{BOLD}❌  An unexpected error occurred: {e}{RESET}")
+            return
 
     # file decompression
     elif command == "-d":
         # Validate file's extension.
         if not input_path.endswith(".sdfl"):
-            print("Error: Input file should have .sdfl extension")
+            print(f"{RED}❌  Error: Input file should have .sdfl extension " +
+                  f"{RESET}")
             return
 
+        dir_name = os.path.dirname(input_path)
+        file_name = os.path.basename(input_path)
+
         # Remove .sdfl extension
-        output_path = input_path[:-5]
+        clean_file_name = file_name[:-5]
+
+        # Remove _copy if exist
+        if "_copy(" in clean_file_name:
+            # Separate the name before _copy(
+            parts = clean_file_name.split("_copy(")
+            # Take the first part before _copy(
+            base_part = parts[0]
+
+            output_path = os.path.join(dir_name, base_part)
+
+        else:
+            output_path = os.path.join(dir_name, clean_file_name)
+
+        if not os.path.exists(input_path):
+            print(f"{RED}❌  Error: the file '{input_path}' was not found. " +
+                  f"Please check the name and try again.{RESET}")
+            return
+
+        if os.path.exists(output_path):
+            print(f"\n{YELLOW}⚠️  Warning: The file '{output_path}' " +
+                  f"already exists.{RESET}")
+            print(f"{WHITE}Please choose an action:{RESET}")
+            print(f"  {CYAN}[1]{RESET} Abort decompression (Stop)")
+            print(f"  {CYAN}[2]{RESET} Overwrite the existing file")
+            print(f"  {CYAN}[3]{RESET} Create a new copy automatically")
+
+            choice = input(f"{YELLOW}> {RESET}").strip()
+
+            if choice == '2':
+                print(f"{RED}⚠️  Overwriting existing file...{RESET}")
+                time.sleep(0.5)
+
+            elif choice == '3':
+                # Auto-rename logic: e.g., test.pdf -> test_copy(1).pdf
+                base_name, ext = os.path.splitext(output_path)
+                counter = 1
+                new_output_path = f"{base_name}_copy({counter}){ext}"
+
+                # Keep incrementing the counter until we find a free name
+                while os.path.exists(new_output_path):
+                    counter += 1
+                    new_output_path = f"{base_name}_copy({counter}){ext}"
+
+                output_path = new_output_path
+                print(f"{GREEN}✅ Redirecting output to: " +
+                      f"'{output_path}'{RESET}")
+
+            else:
+                # If user types 1 or anything else, abort for safety
+                print(f"{RED}❌ Decompression aborted by user.{RESET}\n")
+                return
 
         try:
             decompress_file(input_path, output_path)
 
         except FileNotFoundError:
-            print(f"Error: the file '{input_path}' was not found. " +
-                  "Please check the name and try again.")
+            print(f"{RED}{BOLD}❌  Error: the file '{input_path}' was not " +
+                  f"found. Please check the name and try again.{RESET}")
+            return
 
         # Handles any another type of errors e.g., Invalid or corrupted file.
         except Exception as e:
-            # print(f"An unexpected error occurred: {e}")
-            raise e
+            print(f"{RED}{BOLD}❌  An unexpected error occurred: {e}{RESET}")
+            return
 
     else:
         print("❌ Invalid command! Please use '-c' to compress" +
@@ -306,4 +395,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    # exit handling for KeyboardInterrupt (Ctrl+C) to prevent crash tracebacks.
+    except KeyboardInterrupt:
+        print(f"\n\n{RED}{BOLD}❌ Operation cancelled by user (Ctrl+C). " +
+              f"Exiting gracefully...{RESET}")
+        sys.exit(0)
