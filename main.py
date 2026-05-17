@@ -14,9 +14,21 @@ import huffman
 import bit_utils
 import deflate
 
+# Libraries import
 import sys
 import os
 import time
+
+# Colors
+RESET = "\033[0m"
+BOLD = "\033[1m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+MAGENTA = "\033[35m"
+CYAN = "\033[36m"
+WHITE = "\033[37m"
 
 
 def format_size(n: int) -> int:
@@ -63,23 +75,31 @@ def compress_file(input_path, output_path):
         None: The function writes directly to the disk and prints statistics
               to the console.
     """
-    print("Initializing DEFLATE-inspired pipeline...")
+    start = time.perf_counter()
+    in_name = os.path.basename(input_path)
+    out_name = os.path.basename(output_path)
+
+    print(f"\n{BLUE}{BOLD}📦 Compressing '{CYAN}{in_name}{BLUE}' ➔ " +
+          f"'{CYAN}{out_name}{BLUE}'{RESET}")
+    print(f"{WHITE}⚙️  Initializing DEFLATE-inspired pipeline...{RESET}")
 
     # Read the input file as raw bytes.
     with open(input_path, "rb") as input_file:
         data = input_file.read()
 
     # Stage 1 (LZ77): Find matching byte sequences.
-    print("⚙️ Running LZ77 pattern detection (3-byte hashing)...", flush=True)
+    print(f"{MAGENTA}├── 🔍 {RESET}Running LZ77 pattern detection " +
+          "(3-byte hashing)...", flush=True)
     tokens = lz77.lz77_compression(data)
 
     # Stage 2 (Deflate): Convert tokens to standard events.
-    print("⚙️ Converting LZ77 tokens to DEFLATE standard events...",
-          flush=True)
+    print(f"{MAGENTA}├── 🔄 {RESET}Converting LZ77 tokens to DEFLATE " +
+          "standard events...", flush=True)
     events = deflate.generate_events(tokens)
 
     # Stage 3 (Huffman): Build Canonical Huffman Codes.
-    print("⚙️ Generating Huffman trees and canonical codes...", flush=True)
+    print(f"{MAGENTA}├── 🌿 {RESET}Generating Huffman trees and " +
+          "canonical codes...", flush=True)
     literal_freq, distance_freq = huffman.count_frequencies(events)
 
     # Build Huffman tree to calculate code length (returns sorted tuples).
@@ -91,18 +111,20 @@ def compress_file(input_path, output_path):
     distance_codes = huffman.generate_canonical_codes(sorted_dist_lengths)
 
     # Convert tuples to fixed-size lists (286 and 30) for the bit writer.
-    # Note: Make sure get_fixed_lengths_array is added in huffman.py
     full_lit_lengths = huffman.get_fixed_lengths_array(sorted_lit_lengths, 286)
     full_dist_lengths = huffman.get_fixed_lengths_array(
                         sorted_dist_lengths, 30
                         )
 
     # Stage 4 (Bit Utils): Pack bits and write to disk.
-    print(f"⚙️ Packing payload into {output_path}...", flush=True)
+    print(f"{MAGENTA}└── 📥 {RESET}Packing payload into destination file...",
+          flush=True)
     bit_utils.write_compressed_file(output_path, full_lit_lengths,
                                     full_dist_lengths, events, literal_codes,
                                     distance_codes
                                     )
+
+    elapsed = time.perf_counter() - start
 
     # Make size comparison.
     original_size = os.path.getsize(input_path)
@@ -113,17 +135,26 @@ def compress_file(input_path, output_path):
     else:
         ratio = 0
 
-    print("✅ Compression completed successfully!")
-    print(f"📄 Original size:    {format_size(original_size)} " +
-          f"({original_size:,} bytes)")
-    print(f"🗜️ Compressed size:  {format_size(compressed_size)} " +
-          f"({compressed_size:,} bytes)")
+    print(f"\n{GREEN}{BOLD}✅ Compression completed successfully!{RESET}")
+    print(f"\n{CYAN}📊 Statistics:{RESET}")
+    print(f"{WHITE}-------------------------------------------------{RESET}")
+
+    orig_readable = format_size(original_size)
+    comp_readable = format_size(compressed_size)
+
+    print(f"  {WHITE}Original Size:   {YELLOW}{orig_readable:<10} " +
+          f"({original_size:,} bytes){RESET}")
+    print(f"  {WHITE}Compressed Size: {YELLOW}{comp_readable:<10} " +
+          f"({compressed_size:,} bytes){RESET}")
 
     if ratio >= 0:
-        print(f"📉 Space saved:      {ratio:.1f}%")
+        print(f"  {WHITE}Space Saved:     {GREEN}{BOLD}{ratio:.1f}% 🔥{RESET}")
     else:
-        print(f"📉 Size added:       {abs(ratio):.1f}% " +
-              "(File might be already compressed)")
+        print(f"  {WHITE}Size Added:      {RED}{BOLD}{abs(ratio):.1f}% ⚠️  " +
+              f"(Already compressed?){RESET}")
+
+    print(f"  {WHITE}Time Taken:      {CYAN}{elapsed:.2f} seconds ⚡{RESET}")
+    print(f"{WHITE}-------------------------------------------------{RESET}\n")
 
 
 def decompress_file(input_path, output_path):
@@ -150,26 +181,43 @@ def decompress_file(input_path, output_path):
         None: The function writes directly to the disk and prints statistics
               to the console.
     """
-    raise NotImplementedError("Decompression not yet implemented")
+    start = time.perf_counter()
+    in_name = os.path.basename(input_path)
+    out_name = os.path.basename(output_path)
+
+    print(f"\n{BLUE}{BOLD}🗃️  Decompressing '{CYAN}{in_name}{BLUE}' ➔ " +
+          f"'{CYAN}{out_name}{BLUE}'{RESET}")
+    print(f"{WHITE}⚙️  Initializing DEFLATE-inspired reverse pipeline..." +
+          f"{RESET}")
 
     # Stage 1 (Bit_utils): Read the compressed file and its header.
-    literal_lengths, distance_lengths, bit_reader = (
+    print(f"{MAGENTA}├── 🔑 {RESET}Reading file header and " +
+          "extracting bitstream...", flush=True)
+    literal_lengths, distance_lengths, payload_bits = (
         bit_utils.read_compressed_file(input_path)
     )
 
     # Stage 2 (Huffman): Construct codes.
+    print(f"{MAGENTA}├── 🌿 {RESET}Reconstructing Canonical Huffman " +
+          "dictionaries...", flush=True)
     literal_codes = huffman.generate_canonical_codes(literal_lengths)
     distance_codes = huffman.generate_canonical_codes(distance_lengths)
 
     # Stage 3 (Deflate): Bit decoding of Tokens.
-    tokens = deflate.decode_events(bit_reader, literal_codes, distance_codes)
+    print(f"{MAGENTA}├── 🔄 {RESET}Decoding bitstream back into " +
+          "standard events...", flush=True)
+    tokens = deflate.decode_events(payload_bits, literal_codes, distance_codes)
 
     # Stage 4 (LZ77): Decompress the LZ77.
-    original_data = lz77.lz77_decompress(tokens)
+    print(f"{MAGENTA}└── 🔍 {RESET}Reconstructing original raw bytes via " +
+          "LZ77 decompression...", flush=True)
+    original_data = lz77.lz77_decompression(tokens)
 
     # Writing the original file to the hard disk
     with open(output_path, "wb") as original_file:
         original_file.write(original_data)
+
+    elapsed = time.perf_counter() - start
 
     # Make size comparison.
     compressed_size = os.path.getsize(input_path)
@@ -180,12 +228,22 @@ def decompress_file(input_path, output_path):
     else:
         ratio = 0
 
-    print("✅ Decompression completed successfully!")
-    print(f"🗜️ Compressed size:   {format_size(compressed_size)} " +
-          f"({compressed_size:,} bytes)")
-    print(f"📄 Original size: {format_size(original_size)} " +
-          f"({original_size:,} bytes)")
-    print(f"📉 Space added:     +{ratio:.1f}%")
+    print(f"\n{GREEN}{BOLD}✅ Decompression completed successfully!{RESET}")
+    print(f"\n{CYAN}📊 Statistics:{RESET}")
+    print(f"{WHITE}-------------------------------------------------{RESET}")
+
+    comp_readable = format_size(compressed_size)
+    orig_readable = format_size(original_size)
+
+    print(f"  {WHITE}Compressed Size: {YELLOW}{comp_readable:<10} " +
+          f"({compressed_size:,} bytes){RESET}")
+    print(f"  {WHITE}Original Size:   {YELLOW}{orig_readable:<10} " +
+          f"({original_size:,} bytes){RESET}")
+
+    print(f"  {WHITE}Expansion:       {GREEN}{BOLD}+{ratio:.1f}% 📈{RESET}")
+
+    print(f"  {WHITE}Time Taken:      {CYAN}{elapsed:.4f} seconds ⚡{RESET}")
+    print(f"{WHITE}-------------------------------------------------{RESET}\n")
 
 
 def main():
@@ -208,13 +266,9 @@ def main():
                 return
 
         output_path = input_path + ".sdfl"
-        print(f"🗃️ Compressing '{input_path}' to '{output_path}' ...")
 
         try:
-            start = time.perf_counter()
             compress_file(input_path, output_path)
-            elapsed = time.perf_counter() - start
-            print(f"⏱️ Time taken:       {elapsed:.2f} seconds")
 
         except FileNotFoundError:
             print(f"Error: the file '{input_path}' was not found. " +
@@ -231,14 +285,11 @@ def main():
             print("Error: Input file should have .sdfl extension")
             return
 
-        output_path = input_path[:-5]  # Remove .sdfl extension
-        print(f"🗃️ Decompressing '{input_path}' to '{output_path}' ...")
+        # Remove .sdfl extension
+        output_path = input_path[:-5]
 
         try:
-            start = time.perf_counter()
             decompress_file(input_path, output_path)
-            elapsed = time.perf_counter() - start
-            print(f"⏱️ Time taken:      {elapsed:.2f} seconds")
 
         except FileNotFoundError:
             print(f"Error: the file '{input_path}' was not found. " +
@@ -246,7 +297,8 @@ def main():
 
         # Handles any another type of errors e.g., Invalid or corrupted file.
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            # print(f"An unexpected error occurred: {e}")
+            raise e
 
     else:
         print("❌ Invalid command! Please use '-c' to compress" +

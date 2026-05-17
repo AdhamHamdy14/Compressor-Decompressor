@@ -32,28 +32,31 @@ This project was developed by Computer and Systems Engineering Department (CSED2
 * [`deflate.py`](./deflate.py): The core integration layer that combines LZ77 and Huffman encoding to achieve high-efficiency compression (similar to the DEFLATE standard).
 * [`huffman.py`](./huffman.py): Contains the Huffman Coding logic, including building frequency trees and generating prefix-free binary codes for data blocks.
 * [`bit_utils.py`](./bit_utils.py): A utility module for low-level bit manipulation, providing functions to read and write data at the bit level rather than bytes.
+* [`generate_audio.py`](./Test_scripts/generate_audio.py): A specialized script that generates synthetic, raw uncompressed media files (e.g., a `.wav` file with perfect digital silence or a flat tone). It is used to stress-test the compressor's pattern detection capabilities and demonstrate extreme compression ratios.
+* [`test_script.py`](./Test_scripts/test_script.py): A diagnostic tool designed to inspect the raw binary contents of files, specifically the generated .sdfl compressed archives. It reads the file at the byte level and outputs the exact 8-bit padded binary (`0/1`) and decimal representations for each byte.
 
 ---
 
 ## ✅ Key Features
 
-* **Smart Size Handling:** Detects and warns when compressing already packed files
+* **Smart Size Handling:** Detects and warns when compressing already packed files.
 * **Robust Error Handling:** Validates file extensions and safely catches corruption during bit-stream decoding.
+* **Media & Binary File Support:** Successfully compresses complex binary files (PDFs, synthetic Video/Audio) with extreme space savings (up to 94% on highly redundant data) without memory crashes.
 
 ---
 
 ## 🔄 Data Flow
 
-The input data flows through a structured pipeline to achieve efficient compression, following the DEFLATE standard. This workflow is orchestrated by `deflate.py` which manages the data transfer between the LZ77 and Huffman stages.
+The input data flows through a structured pipeline to achieve efficient compression, following the DEFLATE standard. This workflow is orchestrated by `main.py` which manages the overall data transfer between all stages.
 ![Workflow](./docs/workflow.jpg)
 
 ### Pipeline Description
 
-1. **Input Data:** The raw byte stream of the file to be compressed.
-2. **`lz77.py` (Pre-compression):** Scans for repeated data patterns, outputting a mix of raw literals and (distance, length) pairs.
-3. **`deflate.py` (The Orchestrator):** Acts as the main integration layer. It receives processed data from `lz77.py`, decides on the Huffman tree configuration (static vs dynamic), and manages the encoding flow.
-4. **`huffman.py` (Entropy Coding):** Generates optimized prefix codes for the literals and distances received from the previous stage.
-5. **`bit_utils.py` (Packing):** The final stage that packs variable-length Huffman codes into a compact binary stream and writes the final compressed file.
+1. **`main.py` (The Orchestrator):** The core controller of the application. It handles I/O operations, reads the raw input file, orchestrates the sequential flow of data through all compression/decompression stages, and calculates final performance metrics.
+2. **`lz77.py` (Pattern Detection):** Scans the raw byte stream using a sliding window to find repeated sequences, outputting a mix of raw literals and (distance, length) pairs.
+3. **`deflate.py` (Event Formatting & Symbol Mapping):** Acts as the precise translator between LZ77 and Huffman. It maps the raw LZ77 lengths and distances to standard DEFLATE symbols and calculates the required "extra bits".
+4. **`huffman.py` (Entropy Coding):** Generates optimized Canonical Huffman prefix codes for the literals and distances received from the previous stage.
+5. **`bit_utils.py` (Packing):** The final stage that packs variable-length Huffman codes into a compact binary stream and writes the final `.sdfl` compressed file.
 
 ---
 
@@ -78,12 +81,12 @@ To compress a file using the DEFLATE-inspired pipeline, use the `-c` (compress) 
 **Command:**
 
 ```bash
-python main.py -c document.txt
+python main.py -c .\tests\test4.pdf
 ```
 
 **Result:**
 
-* A compressed file named `document.txt.sdfl` is generated in the same directory.
+* A compressed file named `test4.pdf.sdfl` is generated in the same directory.
 * Real-time statistics (original size, compressed size, and savings %) are displayed.
 
 #### 2️⃣ Decompression
@@ -93,13 +96,29 @@ To restore a `.sdfl` file to its original state, use the `-d` (decompress) flag.
 **Command:**
 
 ```bash
-python main.py -d document.txt.sdfl
+python main.py -d .\tests\test4.pdf.sdfl
 ```
 
 **Result:**
 
 * The original file is reconstructed with its initial content and name.
 * The tool automatically handles extension validation before processing.
+
+---
+
+## 🧪 How to use test scripts
+
+* ### generate_audio.py
+
+```bash
+python ./Test_scripts/generate_audio.py
+```
+
+* ### test_script.py
+
+```bash
+python ./Test_scripts/test_script.py
+```
 
 ---
 
@@ -131,31 +150,11 @@ Here is a glimpse of what the terminal output looks like during a successful exe
 
 ### Compression Cycle
 
-```bash
-🗃️ Compressing 'document.txt' to 'document.txt.sdfl' ...
-Initializing DEFLATE-inspired pipeline...
-⚙️ Running LZ77 pattern detection (3-byte hashing)...
-⚙️ Converting LZ77 tokens to DEFLATE standard events...
-⚙️ Generating Huffman trees and canonical codes...
-⚙️ Packing payload into {document.txt.sdfl}...
-✅ Compression completed successfully!
-📄 Original size:    2.50 MB (2,621,440 bytes)
-🗜️ Compressed size:  850 KB (870,400 bytes)
-📉 Space saved:      66.8%
-⏱️ Time taken:       1.25 seconds
-```
+![Workflow](./docs/sample_output_1.jpg)
 
 ### Decompression Cycle
 
-```bash
-🗃️ Decompressing 'document.txt.sdfl' to 'document.txt' ...
-
-✅ Decompression completed successfully!
-🗜️ Compressed size:  850 KB (870,400 bytes)
-📄 Original size:    2.50 MB (2,621,440 bytes)
-📉 Space added:      66.8%
-⏱️ Time taken:       1.25 seconds
-```
+![Workflow](./docs/sample_output_2.jpg)
 
 ---
 

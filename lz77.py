@@ -74,7 +74,7 @@ def lz77_compression(data: bytes) -> list:
     return tokens
 
 
-def decompress(tokens: list) -> str:
+def lz77_decompression(tokens: list) -> bytes:
     """
     Reconstruct the original string from a list of LZ77 tokens.
 
@@ -94,15 +94,15 @@ def decompress(tokens: list) -> str:
     Returns:
         str: The fully reconstructed original uncompressed text.
     """
-    output = []      # decoded characters
+    output = bytearray()
     index = 0        # current write position in 'output'
 
     for token in tokens:
         state = token[0]
 
         if state == "Literal":
-            # Append the literal byte (converted to character)
-            output.append(chr(token[1]))
+            # Append the literal byte directly (it's already an int 0-255)
+            output.append(token[1])
             index += 1
 
         else:
@@ -118,5 +118,5 @@ def decompress(tokens: list) -> str:
                 output.append(output[index - distance])
                 index += 1
 
-    # Combine all characters into a single string
-    return ''.join(output)
+    # Return as raw bytes
+    return bytes(output)

@@ -50,14 +50,14 @@ INV_DISTANCE_TABLE = {
 def get_length_symbol_and_extra(length: int) -> tuple:
     """
     Finds the DEFLATE symbol and extra bits for a given match length.
-    
-    It searches the LENGTH_TABLE to find the correct base length, 
-    calculates the difference (extra value), and returns the data needed 
+
+    It searches the LENGTH_TABLE to find the correct base length,
+    calculates the difference (extra value), and returns the data needed
     for Huffman coding.
-    
+
     Args:
         length (int): The original match length from LZ77.
-        
+
     Returns:
         tuple: (length_symbol, extra_value, number_of_extra_bits)
     """
@@ -73,14 +73,14 @@ def get_length_symbol_and_extra(length: int) -> tuple:
 def get_distance_symbol_and_extra(distance: int) -> tuple:
     """
     Finds the DEFLATE symbol and extra bits for a given match distance.
-    
-    It searches the DISTANCE_TABLE to find the correct base distance, 
-    calculates the difference (extra value), and returns the data needed 
+
+    It searches the DISTANCE_TABLE to find the correct base distance,
+    calculates the difference (extra value), and returns the data needed
     for Huffman coding.
-    
+
     Args:
         distance (int): The original match distance from LZ77.
-        
+
     Returns:
         tuple: (distance_symbol, extra_value, number_of_extra_bits)
     """
@@ -96,14 +96,14 @@ def get_distance_symbol_and_extra(distance: int) -> tuple:
 def generate_events(tokens: list) -> list:
     """
     Converts a list of LZ77 tokens into a list of formatted DEFLATE events.
-    
-    This is the main compression function for this stage. It processes 
-    literal characters and matches, formats the extra bits into padded 
+
+    This is the main compression function for this stage. It processes
+    literal characters and matches, formats the extra bits into padded
     binary strings, and adds the End-of-Block symbol at the end.
-    
+
     Args:
         tokens (list): A list of LZ77 tokens, e.g., [("Literal", "a"), ("Match", 4, 1)].
-        
+
     Returns:
         list: A list of formatted events ready for the Huffman and Writer stages.
     """
@@ -142,14 +142,14 @@ def generate_events(tokens: list) -> list:
 def get_actual_length(len_sym: int, len_extra_str: str) -> int:
     """
     Reconstructs the original match length during decompression.
-    
-    It looks up the base length using the Huffman symbol and adds the 
+
+    It looks up the base length using the Huffman symbol and adds the
     integer value of the binary extra bits string.
-    
+
     Args:
         len_sym (int): The decoded Huffman length symbol.
         len_extra_str (str): The binary string of extra bits.
-        
+
     Returns:
         int: The exact original match length.
     """
@@ -164,14 +164,14 @@ def get_actual_length(len_sym: int, len_extra_str: str) -> int:
 def get_actual_distance(dist_sym: int, dist_extra_str: str) -> int:
     """
     Reconstructs the original match distance during decompression.
-    
-    It looks up the base distance using the Huffman symbol and adds the 
+
+    It looks up the base distance using the Huffman symbol and adds the
     integer value of the binary extra bits string.
-    
+
     Args:
         dist_sym (int): The decoded Huffman distance symbol.
         dist_extra_str (str): The binary string of extra bits.
-        
+
     Returns:
         int: The exact original match distance.
     """
@@ -211,14 +211,14 @@ def decode_events(events: list) -> list:
             # Use inverse tables to get base_length and base_distance
             len = get_actual_length(len_sym, len_extra_str)
             dist = get_actual_distance(dist_sym, dist_extra_str)
-                        
+
             # Append ("match", actual_length, actual_distance) to tokens list
             tokens.append(("Match", len, dist))
 
         # Break the loop as the end of block is reached
         elif kind == "End":
             break
-    
+
     return tokens
 
 
