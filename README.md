@@ -13,30 +13,6 @@ The compression pipeline is built from scratch and consists of four main stages:
 
 ---
 
-## 👥 Contributors
-
-This project was developed by Computer and Systems Engineering Department (CSED28++) students at **Alexandria University - Faculty of Engineering**:
-
-* **Anas Alaa Abdo** (ID: `24010004`) - [GitHub Profile](https://github.com/AnasAlaa11)
-* **Adham Hamdy Mohamed Mohamed** (ID: `24010094`) - [GitHub Profile](https://github.com/AdhamHamdy14)
-* **Badr Ashraf Badry Amir** (ID: `24010134`) - [GitHub Profile](https://github.com/BadrAshraf20)
-* **Omar Ayman Ahmed Abd-Elmoniem** (ID: `24010441`) - [GitHub Profile](https://github.com/OmarAyman879)
-* **Amr Ahmed Mahmoud Mohamed** (ID: `24010479`) - [GitHub Profile](https://github.com/AmrAhmed292)
-
----
-
-## 📁 Repository Structure
-
-* [`main.py`](./main.py): The primary entry point of the application. It handles CLI arguments and orchestrates the overall compression and decompression workflows.
-* [`lz77.py`](./lz77.py): Implementation of the LZ77 sliding window algorithm, responsible for finding duplicated strings and performing dictionary-based compression.
-* [`deflate.py`](./deflate.py): The core integration layer that combines LZ77 and Huffman encoding to achieve high-efficiency compression (similar to the DEFLATE standard).
-* [`huffman.py`](./huffman.py): Contains the Huffman Coding logic, including building frequency trees and generating prefix-free binary codes for data blocks.
-* [`bit_utils.py`](./bit_utils.py): A utility module for low-level bit manipulation, providing functions to read and write data at the bit level rather than bytes.
-* [`generate_audio.py`](./Test_scripts/generate_audio.py): A specialized script that generates synthetic, raw uncompressed media files (e.g., a `.wav` file with perfect digital silence or a flat tone). It is used to stress-test the compressor's pattern detection capabilities and demonstrate extreme compression ratios.
-* [`test_script.py`](./Test_scripts/test_script.py): A diagnostic tool designed to inspect the raw binary contents of files, specifically the generated .sdfl compressed archives. It reads the file at the byte level and outputs the exact 8-bit padded binary (`0/1`) and decimal representations for each byte.
-
----
-
 ## ✅ Key Features
 
 * **Smart Size Handling:** Detects and warns when compressing already packed files.
@@ -45,18 +21,17 @@ This project was developed by Computer and Systems Engineering Department (CSED2
 
 ---
 
-## 🔄 Data Flow
+## 💻 Example Output
 
-The input data flows through a structured pipeline to achieve efficient compression, following the DEFLATE standard. This workflow is orchestrated by `main.py` which manages the overall data transfer between all stages.
-![Workflow](./docs/workflow.jpg)
+Here is a glimpse of what the terminal output looks like during a successful execution cycle:
 
-### Pipeline Description
+### Compression Cycle
 
-1. **`main.py` (The Orchestrator):** The core controller of the application. It handles I/O operations, reads the raw input file, orchestrates the sequential flow of data through all compression/decompression stages, and calculates final performance metrics.
-2. **`lz77.py` (Pattern Detection):** Scans the raw byte stream using a sliding window to find repeated sequences, outputting a mix of raw literals and (distance, length) pairs.
-3. **`deflate.py` (Event Formatting & Symbol Mapping):** Acts as the precise translator between LZ77 and Huffman. It maps the raw LZ77 lengths and distances to standard DEFLATE symbols and calculates the required "extra bits".
-4. **`huffman.py` (Entropy Coding):** Generates optimized Canonical Huffman prefix codes for the literals and distances received from the previous stage.
-5. **`bit_utils.py` (Packing):** The final stage that packs variable-length Huffman codes into a compact binary stream and writes the final `.sdfl` compressed file.
+![Workflow](./docs/sample_output_1.jpg)
+
+### Decompression Cycle
+
+![Workflow](./docs/sample_output_2.jpg)
 
 ---
 
@@ -111,14 +86,29 @@ python main.py -d .\tests\test4.pdf.sdfl
 * ### generate_audio.py
 
 ```bash
-python ./Test_scripts/generate_audio.py
+python .\Test_scripts\generate_audio.py
 ```
 
 * ### test_script.py
 
 ```bash
-python ./Test_scripts/test_script.py
+python .\Test_scripts\test_script.py
 ```
+
+---
+
+## 🔄 Data Flow
+
+The input data flows through a structured pipeline to achieve efficient compression, following the DEFLATE standard. This workflow is orchestrated by `main.py` which manages the overall data transfer between all stages.
+![Workflow](./docs/workflow.jpg)
+
+### Pipeline Description
+
+1. **`main.py` (The Orchestrator):** The core controller of the application. It handles I/O operations, reads the raw input file, orchestrates the sequential flow of data through all compression/decompression stages, and calculates final performance metrics.
+2. **`lz77.py` (Pattern Detection):** Scans the raw byte stream using a sliding window to find repeated sequences, outputting a mix of raw literals and (distance, length) pairs.
+3. **`deflate.py` (Event Formatting & Symbol Mapping):** Acts as the precise translator between LZ77 and Huffman. It maps the raw LZ77 lengths and distances to standard DEFLATE symbols and calculates the required "extra bits".
+4. **`huffman.py` (Entropy Coding):** Generates optimized Canonical Huffman prefix codes for the literals and distances received from the previous stage.
+5. **`bit_utils.py` (Packing):** The final stage that packs variable-length Huffman codes into a compact binary stream and writes the final `.sdfl` compressed file.
 
 ---
 
@@ -144,17 +134,33 @@ To approach this optimal limit, we use **Canonical Huffman Coding**. It builds a
 
 ---
 
-## 💻 Example Output
+## 📁 Repository Structure
 
-Here is a glimpse of what the terminal output looks like during a successful execution cycle:
+* [`main.py`](./main.py): The primary entry point of the application. It handles CLI arguments and orchestrates the overall compression and decompression workflows.
+* [`lz77.py`](./lz77.py): Implementation of the LZ77 sliding window algorithm, responsible for finding duplicated strings and performing dictionary-based compression.
+* [`deflate.py`](./deflate.py): The core integration layer that combines LZ77 and Huffman encoding to achieve high-efficiency compression (similar to the DEFLATE standard).
+* [`huffman.py`](./huffman.py): Contains the Huffman Coding logic, including building frequency trees and generating prefix-free binary codes for data blocks.
+* [`bit_utils.py`](./bit_utils.py): A utility module for low-level bit manipulation, providing functions to read and write data at the bit level rather than bytes.
+* [`\Test_scripts\generate_audio.py`](./Test_scripts/generate_audio.py): A specialized script that generates synthetic, raw uncompressed media files (e.g., a `.wav` file with perfect digital silence or a flat tone). It is used to stress-test the compressor's pattern detection capabilities and demonstrate extreme compression ratios.
+* [`\Test_scripts\test_script.py`](./Test_scripts/test_script.py): A diagnostic tool designed to inspect the raw binary contents of files, specifically the generated .sdfl compressed archives. It reads the file at the byte level and outputs the exact 8-bit padded binary (`0/1`) and decimal representations for each byte.
 
-### Compression Cycle
+---
 
-![Workflow](./docs/sample_output_1.jpg)
+## Performance Analysis
 
-### Decompression Cycle
+![Workflow](./docs/Statistics.png)
 
-![Workflow](./docs/sample_output_2.jpg)
+---
+
+## 👥 Contributors
+
+This project was developed by Computer and Systems Engineering Department (CSED28++) students at **Alexandria University - Faculty of Engineering**:
+
+* **Anas Alaa Abdo** (ID: `24010004`) - [GitHub Profile](https://github.com/AnasAlaa11)
+* **Adham Hamdy Mohamed Mohamed** (ID: `24010094`) - [GitHub Profile](https://github.com/AdhamHamdy14)
+* **Badr Ashraf Badry Amir** (ID: `24010134`) - [GitHub Profile](https://github.com/BadrAshraf20)
+* **Omar Ayman Ahmed Abd-Elmoniem** (ID: `24010441`) - [GitHub Profile](https://github.com/OmarAyman879)
+* **Amr Ahmed Mahmoud Mohamed** (ID: `24010479`) - [GitHub Profile](https://github.com/AmrAhmed292)
 
 ---
 
